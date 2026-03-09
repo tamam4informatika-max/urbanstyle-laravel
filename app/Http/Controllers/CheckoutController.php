@@ -6,28 +6,30 @@ use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\OrderItem;
 
-class OrderController extends Controller
+class CheckoutController extends Controller
 {
-    public function store(Request $request)
+    public function checkout(Request $request)
     {
         try {
 
+            $data = $request->all();
+
             $order = Order::create([
-                'order_id' => 'ORD-' . time(),
-                'customer_name' => $request->name,
-                'customer_phone' => $request->phone,
-                'customer_address' => $request->address,
-                'total' => collect($request->items)->sum(function($item){
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'phone' => $data['phone'],
+                'address' => $data['address'],
+                'total' => collect($data['items'])->sum(function ($item) {
                     return $item['price'] * $item['qty'];
                 })
             ]);
 
-            foreach($request->items as $item){
+            foreach ($data['items'] as $item) {
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_name' => $item['name'],
                     'price' => $item['price'],
-                    'qty' => $item['qty']
+                    'quantity' => $item['qty']
                 ]);
             }
 
@@ -41,21 +43,6 @@ class OrderController extends Controller
                 'success' => false,
                 'error' => $e->getMessage()
             ]);
-
         }
-    }
-
-    public function admin()
-    {
-        $orders = Order::latest()->get();
-
-        return view('admin', compact('orders'));
-    }
-
-    public function getOrders()
-    {
-        $orders = \App\Models\Order::with('items')->latest()->get();
-
-        return response()->json($orders);
     }
 }
